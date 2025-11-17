@@ -1,1 +1,31 @@
 <!DOCTYPE html>
+<html lang="fr">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Chat Twitch-like</title>
+		<link rel="stylesheet" href="style.css">
+		<!-- Firebase -->
+		<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+</head>
+<body>
+		<div class="chat-container">
+			<div class="chat-header">Twitch Chat
+				<button id="loginBtn">Connexion</button>
+				<button id="logoutBtn" style="display:none">Déconnexion</button>
+			</div>
+			<div class="chat-messages"></div>
+			<div class="chat-input">
+						<button id="emojiBtn" style="background:none;border:none;padding:0;cursor:pointer">
+							<img src="assets/emojis.svg" alt="Émojis" style="width:32px;height:32px;vertical-align:middle;">
+						</button>
+				<input type="text" id="message" placeholder="Votre message..." maxlength="200">
+				<button id="sendBtn">Envoyer</button>
+			</div>
+			<div id="emojiPicker" style="display:none; position:absolute; z-index:10;"></div>
+		</div>
+		<script src="app.js"></script>
+</body>
+</html>
