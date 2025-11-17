@@ -1,0 +1,8 @@
+[
+  { "name": "smile", "file": "smile.svg" },
+  { "name": "wink", "file": "wink.svg" },
+  { "name": "laugh", "file": "laugh.svg" },
+  { "name": "sad", "file": "sad.svg" },
+  { "name": "angry", "file": "angry.svg" },
+  { "name": "love", "file": "love.svg" }
+]

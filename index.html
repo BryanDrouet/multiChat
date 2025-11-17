@@ -11,21 +11,32 @@
 		<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 </head>
 <body>
-		<div class="chat-container">
-			<div class="chat-header">Twitch Chat
-				<button id="loginBtn">Connexion</button>
-				<button id="logoutBtn" style="display:none">Déconnexion</button>
-			</div>
-			<div class="chat-messages"></div>
-			<div class="chat-input">
+			<div class="main-layout">
+				<div class="chat-container">
+							<div class="chat-header">Twitch Chat
+								<button id="logoutBtn" style="display:none">Déconnexion</button>
+								<input type="color" id="colorPicker" style="display:none; margin-left:12px; vertical-align:middle;" title="Couleur du pseudo">
+							</div>
+					<div class="chat-messages"></div>
+					<div class="chat-input">
 						<button id="emojiBtn" style="background:none;border:none;padding:0;cursor:pointer">
 							<img src="assets/emojis.svg" alt="Émojis" style="width:32px;height:32px;vertical-align:middle;">
 						</button>
-				<input type="text" id="message" placeholder="Votre message..." maxlength="200">
-				<button id="sendBtn">Envoyer</button>
+						<input type="text" id="message" placeholder="Votre message..." maxlength="200">
+						<button id="sendBtn">Envoyer</button>
+					</div>
+					<div id="emojiPicker" style="display:none; position:absolute; z-index:10;"></div>
+				</div>
+				<div class="login-container" id="loginContainer">
+					<h2>Connexion</h2>
+							<button id="loginBtn" class="google-btn">
+								<img src="assets/googleLogo.svg" alt="Google" class="google-logo"> Se connecter avec Google
+							</button>
+							<div class="or-separator">Ou</div>
+							<button id="loginEmailBtn" class="email-btn">Se connecter avec Email</button>
+				</div>
 			</div>
-			<div id="emojiPicker" style="display:none; position:absolute; z-index:10;"></div>
-		</div>
-		<script src="app.js"></script>
+				<div id="popup" class="popup" style="display:none"></div>
+				<script src="app.js"></script>
 </body>
 </html>
