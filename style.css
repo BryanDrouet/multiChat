@@ -1,9 +1,21 @@
-.chat-container.left-align {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-}
+    .chat-container.left-align {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+    
     html {
         background: #18181b;
+    }
+
+html, body { height: 100%; }
+body { overflow: hidden; }
+
+    /* When the page was reloaded (F5) we add `.no-animations` to disable
+       CSS animations/transitions on that load to avoid entrance effects. */
+    .no-animations *, .no-animations *::before, .no-animations *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
     }
 
     body {
@@ -21,14 +33,19 @@
         gap: 32px;
         width: 100vw;
         height: 100vh;
+        overflow: hidden;
     }
 
     .chat-container {
-        flex: 1 1 400px;
-        max-width: 400px;
-        margin: 0 auto;
+        flex: 1 1 0;
+        width: 100%;
+        max-width: none;
+        margin: 0;
         background: #1f1f23;
-        border-radius: 12px;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        border-top-right-radius: 12px;
+        border-bottom-right-radius: 12px;
         box-shadow: 0 2px 16px rgba(0,0,0,0.3);
         display: flex;
         flex-direction: column;
@@ -37,6 +54,40 @@
         overflow: hidden;
         transition: margin 0.3s, justify-content 0.3s;
     }
+
+/* When connected on desktop, constrain sizes so panels don't use full viewport */
+.connected .chat-container {
+    max-width: 80vw;
+    margin: 24px auto;
+    height: 100vh !important;
+    min-height: 400px;
+}
+.connected .login-container {
+    max-width: 300px;
+    max-height: 88vh;
+    margin: 24px 24px 24px auto; /* push to right */
+    height: auto;
+}
+
+/* When connected, center the main layout vertically (desktop) */
+.connected .main-layout {
+    align-items: center;
+}
+
+/* On mobile, when connected use full viewport and remove rounded corners */
+@media (max-width: 900px) {
+    .connected .chat-container, .connected .login-container {
+        width: 100vw;
+        height: 100vh;
+        max-width: 100vw;
+        max-height: 100vh;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+    }
+    /* ensure mobile keeps stretch alignment */
+    .connected .main-layout { align-items: stretch; }
+}
 
     .chat-header {
         background: #9147ff;
@@ -73,59 +124,179 @@
         color: #772ce8;
     }
     .chat-header input[type="color"] {
-        margin-left: 12px;
         vertical-align: middle;
-        border: none;
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        box-shadow: 0 1px 4px rgba(145,71,255,0.08);
+        border: 2px solid rgba(57,57,63,0.6);
+        width: 36px;
+        height: 36px;
+        padding: 2px; /* inner padding to create inner radius effect */
+        border-radius: 10px; /* outer radius */
+        box-shadow: 0 1px 4px rgba(145,71,255,0.08), inset 0 0 0 3px rgba(0,0,0,0.12);
+        background-clip: padding-box;
         cursor: pointer;
-        transition: box-shadow 0.2s;
+        transition: box-shadow 0.16s, transform 0.12s;
+        overflow: hidden;
     }
+    /* hidden by default until JS reveals elements */
+    .chat-header input[type="color"], #displayName, #logoutBtn { display: none; }
 
-#emojiPicker {
-    background: #18181b;
-    border: 2px solid #9147ff;
-    border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(145,71,255,0.18), 0 2px 12px rgba(0,0,0,0.25);
-    padding: 18px 14px 12px 14px;
-    display: none;
-    min-width: 240px;
-    max-width: 340px;
-    max-height: 260px;
+    /* When connected, reveal header controls and make color picker use inline-flex for proper alignment */
+    .connected .chat-header .header-controls { display: flex; }
+    .connected .chat-header input[type="color"],
+    .connected #displayName,
+    .connected #logoutBtn { display: inline-flex; align-items: center; }
+
+    /* Slight hover effect on color picker */
+    .chat-header input[type="color"]:hover { box-shadow: 0 4px 12px rgba(145,71,255,0.12), inset 0 0 0 3px rgba(0,0,0,0.08); transform: translateY(-1px); }
+
+    .chat-header .header-controls {
+        /* place controls on the right and reverse their visual order */
+        --ctrl-size: 34px;
+        width: auto;
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+        flex-direction: row-reverse; /* reverse order: last element in markup appears at far right */
+        height: var(--ctrl-size);
+    }
+    #displayName {
+        background: #2f2f35;
+        border: 1px solid #39393f;
+        color: #fff;
+        padding: 0 8px;
+        border-radius: 8px;
+        font-size: 0.95em;
+        width: 120px; /* reduced width */
+        outline: none;
+        height: var(--ctrl-size);
+        display: inline-flex;
+        align-items: center;
+    }
+    #displayName::placeholder { color: #bbb; }
+    .chat-header .header-controls button { margin-left: 0; padding: 0 10px; font-size: 0.95em; height: var(--ctrl-size); display: inline-flex; align-items: center; }
+
+    /* color picker 1:1 square matching other controls */
+    .chat-header input[type="color"] { width: var(--ctrl-size); height: var(--ctrl-size); padding: 0; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; border: 2px solid rgba(57,57,63,0.6); }
+
+    /* Ensure all header-controls children use same box-sizing and baseline sizing */
+    .chat-header .header-controls > * { box-sizing: border-box; height: var(--ctrl-size); }
+    .chat-header .header-controls button, #displayName { min-height: var(--ctrl-size); }
+    .chat-header .header-controls button { min-width: var(--ctrl-size); }
+
+    /* WebKit color input swatch normalization */
+    .chat-header input[type="color"] {-webkit-appearance: none; appearance: none;}
+    .chat-header input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    .chat-header input[type="color"]::-webkit-color-swatch { border: none; border-radius: 6px; }
+
+    #emojiPicker {
+    --emoji-size: 36px; /* unified emoji item size */
+    background: linear-gradient(180deg,#18181b,#151518);
+    border: 1px solid rgba(145,71,255,0.18);
+    border-radius: 12px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 4px 18px rgba(145,71,255,0.06);
+    padding: 12px;
+    min-width: 220px;
+    max-width: 360px;
+    max-height: 220px;
     overflow-y: auto;
+    overflow-x: hidden;
     position: absolute;
-    z-index: 20;
+    z-index: 40;
     font-family: 'Segoe UI', 'Arial', sans-serif;
-    transition: box-shadow 0.2s, border 0.2s;
+    transition: transform 0.16s cubic-bezier(.2,.9,.2,1), opacity 0.12s ease;
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center; /* center emojis horizontally */
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+    pointer-events: none;
 }
 #emojiPicker button,
 #emojiPicker img {
-    background: none;
-    border: none;
-    font-size: 26px;
+    /* unified style for emoji items (buttons and images) */
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+    border: 1px solid rgba(255,255,255,0.03);
+    font-size: calc(var(--emoji-size) * 0.6);
     margin: 6px 4px;
     cursor: pointer;
-    transition: background 0.2s, transform 0.2s;
+    transition: background 0.14s, transform 0.14s, box-shadow 0.14s;
     border-radius: 8px;
-    padding: 6px;
+    padding: 0; /* center content inside fixed box */
     outline: none;
-    box-shadow: 0 1px 4px rgba(145,71,255,0.08);
-    width: 36px;
-    height: 36px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02), 0 1px 4px rgba(145,71,255,0.06);
+    width: var(--emoji-size);
+    height: var(--emoji-size);
     vertical-align: middle;
     display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
 }
 #emojiPicker button:hover,
 #emojiPicker img:hover {
-    background: #9147ff33;
-    transform: scale(1.15);
+    background: linear-gradient(180deg, rgba(145,71,255,0.12), rgba(145,71,255,0.06));
+    transform: scale(1.12);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02), 0 6px 18px rgba(145,71,255,0.08);
+}
+
+/* Emoji button hover preview (random emoji like Discord) */
+#emojiBtn { position: relative; }
+#emojiBtn .emoji-preview {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    font-size: 20px;
+    line-height: 1;
+}
+#emojiBtn .emoji-preview img.emoji-preview-img { width: 22px; height: 22px; display: block; }
+
+/* picker emoji smaller visual tweaks */
+.picker-emoji { width: calc(var(--emoji-size) - 8px); height: calc(var(--emoji-size) - 8px); padding: 4px; object-fit: contain; }
+
+/* Custom scrollbars (WebKit + Blink) */
+*::-webkit-scrollbar { width: 12px; height: 12px; }
+*::-webkit-scrollbar-track { background: #151517; border-radius: 8px; }
+*::-webkit-scrollbar-thumb { background: linear-gradient(180deg,#9147ff88,#772ce888); border-radius: 8px; border: 3px solid #1f1f23; }
+*::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg,#772ce8,#5b2be0); }
+
+/* Specific smaller scrollbars for message area and emoji picker */
+.chat-messages::-webkit-scrollbar { width: 10px; }
+#emojiPicker::-webkit-scrollbar { width: 10px; }
+
+/* Subtle login panel scrollbar */
+.login-container::-webkit-scrollbar { width: 8px; }
+.login-container::-webkit-scrollbar-track { background: transparent; }
+.login-container::-webkit-scrollbar-thumb { background: rgba(145,71,255,0.10); border-radius: 8px; border: 2px solid #1f1f23; }
+.login-container::-webkit-scrollbar-thumb:hover { background: rgba(145,71,255,0.14); }
+
+/* Firefox subtle scrollbar for login */
+.login-container { scrollbar-color: rgba(145,71,255,0.10) transparent; }
+
+/* Firefox scrollbar support */
+* { scrollbar-width: thin; scrollbar-color: #9147ff88 #151517; }
+
+/* Small visual tweaks for emoji items */
+#emojiPicker img {
+    border-radius: 6px;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    width: calc(var(--emoji-size) - 8px);
+    height: calc(var(--emoji-size) - 8px);
+    object-fit: contain;
+}
+
+/* When emojiPicker is shown we add a subtle entrance */
+#emojiPicker.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
 }
 
     .chat-messages {
@@ -153,6 +324,21 @@
         margin: 0;
         word-break: break-word;
     }
+
+/* Make custom emoji images match the surrounding text size and baseline */
+.text img.emoji-inline,
+.emoji-inline {
+    height: 1em;
+    width: auto;
+    display: inline-block;
+    vertical-align: -0.08em;
+    margin: 0 0.12em 0 0.08em; /* small horizontal spacing so emoji isn't glued to text */
+}
+
+/* Ensure input text and inline emoji baseline are consistent */
+#message {
+    line-height: 1.2;
+}
 
     .chat-input {
         display: flex;
@@ -208,16 +394,30 @@
     }
 
     .login-container {
-        flex: 1 1 300px;
-        max-width: 300px;
-        background: #23232a;
-        border-radius: 8px;
-        box-shadow: 0 2px 16px rgba(0,0,0,0.2);
-        padding: 32px 24px;
-        margin-top: 40px;
+        /* right-side column on desktop: fixed width so admin panel sits nicely */
+        flex: 0 0 320px;
+        width: 320px;
+        max-width: 320px;
+        height: auto;
+        background: #1f1f23;
+        border-radius: 12px;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        padding: 20px;
+        margin-top: 0;
         color: #fff;
-        text-align: center;
+        text-align: left;
         animation: fadeIn 0.7s;
+        overflow: visible;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* when login panel is aligned to the right, remove right-side radius */
+    .login-container.right-align {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
     }
 
     .login-container button {
@@ -231,6 +431,12 @@
         transition: box-shadow 0.2s, transform 0.2s;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
+
+/* ensure login container behaves as a sidebar on larger screens */
+@media (min-width: 901px) {
+    .main-layout { align-items: flex-start; }
+    .login-container { position: relative; top: 0; right: 0; }
+}
 
     .login-container button:active {
         transform: scale(0.97);
@@ -257,6 +463,152 @@
         height: 22px;
         margin-right: 6px;
     }
+
+/* Admin panel styling to match site theme */
+#adminPanel {
+    background: linear-gradient(180deg,#1b1720,#15141a);
+    border: 1px solid rgba(145,71,255,0.12);
+    padding: 12px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    color: #fff;
+    margin-top: 0;
+    /* Contrainte pour qu'il se comporte comme la sidebar */
+    flex: 0 0 320px;
+    width: 320px;
+    max-width: 320px;
+    box-sizing: border-box;
+    height: 100vh;
+}
+#adminPanel button {
+    background: #2f2f35;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.03);
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95em;
+}
+#adminPanel select[data-uid] {
+    background: #23232a;
+    color: #fff;
+    border: 1px solid #39393f;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.95em;
+    outline: none;
+    transition: border-color 0.18s, box-shadow 0.18s;
+    box-shadow: 0 1px 4px rgba(145,71,255,0.06);
+    appearance: none;
+    cursor: pointer;
+}
+#adminPanel .toggle-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1em;
+    font-weight: 500;
+    background: #2f3a48;
+    border-radius: 999px;
+    padding: 4px 16px 4px 12px;
+    color: #3de9d6;
+    min-width: 80px;
+    user-select: none;
+}
+#adminPanel .toggle-switch input[type="checkbox"] {
+    appearance: none;
+    width: 28px;
+    .chat-container.left-align {
+    outline: none;
+    margin: 0 0 0 8px;
+    box-shadow: 0 1px 4px rgba(60,64,67,.12);
+    transition: background 0.18s;
+    position: relative;
+    cursor: pointer;
+}
+#adminPanel .toggle-switch input[type="checkbox"]:checked {
+    background: #3de9d6;
+}
+#adminPanel .toggle-switch input[type="checkbox"]::after {
+    content: '';
+    display: block;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    transition: background 0.18s;
+}
+#adminPanel .toggle-switch input[type="checkbox"]:checked::after {
+    background: #3de9d6;
+}
+#adminPanel select[data-uid]:hover, #adminPanel select[data-uid]:focus {
+    border-color: #9147ff;
+    box-shadow: 0 2px 8px rgba(145,71,255,0.12);
+}
+#adminPanel button:hover { background: linear-gradient(180deg,#3b2b63,#2f2a56); box-shadow: 0 4px 12px rgba(145,71,255,0.08); }
+    .login-container.right-align {
+        height: 100vh;
+        min-height: 100vh;
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 100;
+        box-sizing: border-box;
+        overflow-y: auto;
+    }
+#adminPanel #roleManager { margin-top: 8px; }
+
+/* Make admin panel responsive: on small screens behave like full-width login panel */
+@media (max-width: 900px) {
+    #adminPanel { flex: none !important; width: 100% !important; max-width: 100% !important; border-radius: 0 !important; margin-top: 0 !important; height: 100vh !important; }
+    .chat-container { border-radius: 0 !important; }
+}
+
+/* message delete button (small, right after username) */
+.msg-delete-btn {
+    background: transparent;
+    color: #ff6b6b;
+    border: none;
+    padding: 2px 6px;
+    font-size: 0.85em;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.12s, transform 0.12s;
+}
+.msg-delete-btn:hover { background: rgba(255,107,107,0.08); transform: translateY(-1px); }
+
+/* small SVG inside delete button */
+.msg-delete-btn .msg-delete-icon {
+    width: 14px;
+    height: 14px;
+    display: block;
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+    filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(93deg) brightness(110%) contrast(100%);
+}
+
+/* Force message-related images to be square (1:1) and avoid distortion */
+#emojiBtn img,
+.picker-emoji,
+#emojiPicker img,
+.msg-delete-btn .msg-delete-icon,
+.text img.emoji-inline,
+.emoji-inline {
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+}
+
+/* small ban/kick buttons in role manager */
+.ban-btn, .kick-btn { padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.04); background: #222; color: #fff; }
+.ban-btn:hover { background: #5b2be0; }
+.kick-btn:hover { background: #c13b3b; }
 
     .email-btn {
         background: #9147ff;
@@ -333,6 +685,29 @@
     }
 }
 
+/* Code styling for parsed markdown */
+.code-block {
+    background: #0f0f11;
+    border: 1px solid #222;
+    padding: 8px;
+    border-radius: 8px;
+    overflow: auto;
+    margin: 8px 0;
+}
+.code-block code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace;
+    color: #e6e6e6;
+    white-space: pre-wrap;
+}
+.inline-code {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.03);
+    padding: 0.08em 0.3em;
+    border-radius: 4px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace;
+    font-size: 0.95em;
+}
+
 @media (max-width: 600px) {
     .chat-container {
         max-width: 100vw;
@@ -366,4 +741,11 @@
         width: 28px;
         height: 28px;
     }
+}
+
+.chat-container {
+    display: flex !important;
+    visibility: visible !important;
+    min-height: 320px !important;
+    height: auto !important;
 }

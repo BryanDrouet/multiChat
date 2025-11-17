@@ -13,10 +13,13 @@
 <body>
 			<div class="main-layout">
 				<div class="chat-container">
-							<div class="chat-header">Twitch Chat
-								<button id="logoutBtn" style="display:none">Déconnexion</button>
-								<input type="color" id="colorPicker" style="display:none; margin-left:12px; vertical-align:middle;" title="Couleur du pseudo">
-							</div>
+								<div class="chat-header">Twitch Chat
+									<div class="header-controls">
+										<input type="text" id="displayName" placeholder="Modifier le pseudo" title="Modifier le pseudo">
+										<input type="color" id="colorPicker" title="Couleur du pseudo">
+										<button id="logoutBtn">Déconnexion</button>
+									</div>
+								</div>
 					<div class="chat-messages"></div>
 					<div class="chat-input">
 						<button id="emojiBtn" style="background:none;border:none;padding:0;cursor:pointer">
@@ -25,7 +28,7 @@
 						<input type="text" id="message" placeholder="Votre message..." maxlength="200">
 						<button id="sendBtn">Envoyer</button>
 					</div>
-					<div id="emojiPicker" style="display:none; position:absolute; z-index:10;"></div>
+					<div id="emojiPicker"></div>
 				</div>
 				<div class="login-container" id="loginContainer">
 					<h2>Connexion</h2>
