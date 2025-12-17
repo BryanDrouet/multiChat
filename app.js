@@ -2,13 +2,9 @@
 function showPopup(msg) {
   const popup = document.getElementById('popup');
   popup.textContent = msg;
-  popup.style.display = 'block';
-  popup.style.opacity = '1';
-  popup.classList.remove('hide');
-  popup.classList.add('popup');
+  popup.classList.add('show');
   setTimeout(() => {
-    popup.style.opacity = '0';
-    popup.style.display = 'none';
+    popup.classList.remove('show');
   }, 2000);
 }
 
@@ -44,8 +40,9 @@ const colorPicker = document.getElementById('colorPicker');
 // native emoji set for quick previews
 const nativeEmojis = ['😀','😂','😍','😎','😭','😡','👍','🙏','🔥','🎉','🍕','🎮','✨','🎵','💯'];
 
-// create a preview element inside emoji button for hover previews
+// create a preview element inside emoji button for hover previews (Discord-style)
 let emojiPreviewInterval = null;
+let currentPreviewIndex = 0;
 if (emojiBtn) {
   // ensure there's a preview container
   let preview = emojiBtn.querySelector('.emoji-preview');
@@ -60,22 +57,36 @@ if (emojiBtn) {
     const ensureEmojis = window.customEmojis ? Promise.resolve(window.customEmojis) : fetch('emojis.json').then(r => r.json()).then(list => { window.customEmojis = list; return list; }).catch(() => []);
     ensureEmojis.then(() => {
       if (emojiPreviewInterval) return;
-      emojiPreviewInterval = setInterval(() => {
-        const useCustom = window.customEmojis && window.customEmojis.length && Math.random() < 0.5;
-        if (useCustom) {
-          const em = window.customEmojis[Math.floor(Math.random()*window.customEmojis.length)];
-          // show image preview
-          preview.innerHTML = '';
-          const img = document.createElement('img');
-          img.className = 'emoji-preview-img';
-          img.src = `assets/emojis/${em.file}`;
-          img.alt = em.name;
-          preview.appendChild(img);
-        } else {
-          const e = nativeEmojis[Math.floor(Math.random()*nativeEmojis.length)];
-          preview.textContent = e;
-        }
-      }, 700);
+      // Combine native and custom emojis
+      const allEmojis = [...nativeEmojis];
+      if (window.customEmojis && window.customEmojis.length) {
+        window.customEmojis.forEach(em => allEmojis.push({ custom: true, ...em }));
+      }
+      currentPreviewIndex = Math.floor(Math.random() * allEmojis.length);
+      
+      const showEmoji = () => {
+        const emoji = allEmojis[currentPreviewIndex];
+        preview.innerHTML = '';
+        preview.style.opacity = '0';
+        
+        setTimeout(() => {
+          if (emoji.custom) {
+            const img = document.createElement('img');
+            img.className = 'emoji-preview-img';
+            img.src = `assets/emojis/${emoji.file}`;
+            img.alt = emoji.name;
+            preview.appendChild(img);
+          } else {
+            preview.textContent = emoji;
+          }
+          preview.style.opacity = '1';
+        }, 50);
+        
+        currentPreviewIndex = (currentPreviewIndex + 1) % allEmojis.length;
+      };
+      
+      showEmoji(); // Show first emoji immediately
+      emojiPreviewInterval = setInterval(showEmoji, 450); // Change every 450ms like Discord
     }).catch(() => {});
   };
 
@@ -85,7 +96,10 @@ if (emojiBtn) {
       emojiPreviewInterval = null;
     }
     const prev = emojiBtn.querySelector('.emoji-preview');
-    if (prev) prev.innerHTML = '';
+    if (prev) {
+      prev.style.opacity = '0';
+      setTimeout(() => { prev.innerHTML = ''; }, 150);
+    }
   };
 
   // start/stop preview only on pointer hover (mouseenter/leave).
@@ -95,6 +109,35 @@ if (emojiBtn) {
   emojiBtn.addEventListener('mouseleave', stopPreview);
 }
 const displayNameInput = document.getElementById('displayName');
+
+// Affiche un emoji aléatoire au chargement de la page
+if (emojiBtn) {
+  const initRandomEmoji = () => {
+    fetch('emojis.json').then(r => r.json()).then(list => {
+      window.customEmojis = list;
+      const allEmojis = [...nativeEmojis];
+      list.forEach(em => allEmojis.push({ custom: true, ...em }));
+      const randomEmoji = allEmojis[Math.floor(Math.random() * allEmojis.length)];
+      
+      if (randomEmoji.custom) {
+        const img = document.createElement('img');
+        img.src = `assets/emojis/${randomEmoji.file}`;
+        img.alt = randomEmoji.name;
+        img.style.width = '32px';
+        img.style.height = '32px';
+        emojiBtn.appendChild(img);
+      } else {
+        emojiBtn.textContent = randomEmoji;
+        emojiBtn.style.fontSize = '24px';
+      }
+    }).catch(() => {
+      // Fallback: affiche un emoji natif aléatoire
+      emojiBtn.textContent = nativeEmojis[Math.floor(Math.random() * nativeEmojis.length)];
+      emojiBtn.style.fontSize = '24px';
+    });
+  };
+  initRandomEmoji();
+}
 
 let currentUser = null;
 let isAdmin = false;
@@ -180,12 +223,7 @@ firebase.auth().onAuthStateChanged(user => {
     // chat container visible when connected; login visibility decided after role lookup
     chatContainer.style.display = '';
     logoutBtn.style.display = '';
-    // Place le bouton déconnexion à droite du champ pseudo
-    if (displayNameInput && logoutBtn && displayNameInput.parentNode) {
-      displayNameInput.parentNode.insertBefore(logoutBtn, displayNameInput.nextSibling);
-      logoutBtn.style.marginLeft = '10px';
-      logoutBtn.style.verticalAlign = 'middle';
-    }
+    // Le positionnement du bouton déconnexion est géré par CSS
     // Récupère le rôle et la couleur depuis la base
     usersRef.child(user.uid).once('value', snap => {
       const data = snap.val();
@@ -195,8 +233,9 @@ firebase.auth().onAuthStateChanged(user => {
       isModo = userRole === 'modo';
       sendBtn.disabled = false;
       messageInput.disabled = false;
+      messageInput.placeholder = 'Votre message...';
+      emojiBtn.disabled = false;
       colorPicker.value = userColor;
-      colorPicker.style.display = '';
           colorPicker.oninput = function() {
             userColor = this.value;
             // try to persist immediately to server, but keep a local pending copy
@@ -214,15 +253,13 @@ firebase.auth().onAuthStateChanged(user => {
       if (displayNameInput) {
         const knownName = (data && (data.displayName || data.name)) || user.displayName || user.email || '';
         displayNameInput.value = knownName;
-        displayNameInput.style.display = '';
-        displayNameInput.style.width = (knownName.length * 0.75 + 2) + 'em';
         // ensure DB has displayName set
         usersRef.child(user.uid).update({ displayName: knownName });
       }
       // show admin controls in the login panel on desktop, otherwise hide
       if (isAdmin) {
         showAdminControls();
-        loginContainer.style.display = '';
+        loginContainer.classList.add('admin-visible');
         // Ajoute le toggle Mode annonce à côté du bouton d’envoi si admin
         setTimeout(() => {
           if (sendBtn && !document.getElementById('toggleAnnounceMode')) {
@@ -250,32 +287,12 @@ firebase.auth().onAuthStateChanged(user => {
               announceMode = announceToggle.checked;
             }
           }
-          // Ajoute le panneau de gestion des utilisateurs dans le chat (pour admin)
-          if (!document.getElementById('roleManager')) {
-            const roleManager = document.createElement('div');
-            roleManager.id = 'roleManager';
-            roleManager.style.margin = '18px 0 0 0';
-            roleManager.style.background = 'rgba(30,30,40,0.9)';
-            roleManager.style.borderRadius = '8px';
-            roleManager.style.padding = '12px';
-            roleManager.style.maxWidth = '420px';
-            roleManager.style.position = 'absolute';
-            roleManager.style.right = '24px';
-            roleManager.style.top = '70px';
-            roleManager.style.zIndex = '20';
-            chatContainer.appendChild(roleManager);
-            loadUserList();
-          }
         }, 300);
       } else {
         hideAdminControls();
-        loginContainer.style.display = 'none';
         // Retire le toggle annonce si non admin
         const oldToggle = document.getElementById('toggleAnnounceMode');
         if (oldToggle && oldToggle.parentNode) oldToggle.parentNode.remove();
-        // Retire le panneau de gestion des utilisateurs si non admin
-        const oldRoleManager = document.getElementById('roleManager');
-        if (oldRoleManager && oldRoleManager.parentNode) oldRoleManager.parentNode.remove();
       }
           // If there was a pending profile change saved before reload, apply it now
           try {
@@ -310,38 +327,19 @@ firebase.auth().onAuthStateChanged(user => {
         try { firebase.auth().signOut(); } catch(e) {}
       }
     });
-    // Centre le chat si connecté
-    document.querySelector('.main-layout').style.justifyContent = 'center';
-    chatContainer.style.marginLeft = 'auto';
-    chatContainer.style.marginRight = 'auto';
     // remove alignment classes
     chatContainer.classList.remove('left-align');
     loginContainer.classList.remove('right-align');
-    // reset login margins
-    loginContainer.style.marginLeft = '';
-    loginContainer.style.marginRight = '';
     // Enregistre l'utilisateur si nouveau
   } else {
     // remove connected class when logged out
     document.documentElement.classList.remove('connected');
-    loginContainer.style.display = '';
-    chatContainer.style.display = '';
-    logoutBtn.style.display = 'none';
     sendBtn.disabled = true;
     messageInput.disabled = true;
-    colorPicker.style.display = 'none';
-    if (displayNameInput) displayNameInput.style.display = 'none';
+    messageInput.placeholder = 'Connectez-vous pour envoyer un message';
+    emojiBtn.disabled = true;
     hideAdminControls();
-    // Colle le chat à gauche si non connecté
-    document.querySelector('.main-layout').style.justifyContent = 'flex-start';
-    chatContainer.style.marginLeft = '0';
-    chatContainer.style.marginRight = '0';
     chatContainer.classList.add('left-align');
-    chatContainer.style.height = '100vh';
-    chatContainer.style.minHeight = '100vh';
-    // positionne le panneau de login à droite
-    loginContainer.style.marginLeft = 'auto';
-    loginContainer.style.marginRight = '0';
     loginContainer.classList.add('right-align');
     // detach any user listener
     if (currentUserListener) { currentUserListener.off(); currentUserListener = null; }
@@ -430,21 +428,25 @@ function showAdminControls() {
     // Set initial toggle states from DB
     controlRef.once('value', snap => {
       const val = snap.val() || {};
-      document.getElementById('toggleBlockChat').checked = !!val.chatBlocked;
-      document.getElementById('toggleSlowMode').checked = !!val.slowMode;
-      document.getElementById('toggleAnnounceMode').checked = !!val.announceMode;
+      const blockChatToggle = document.getElementById('toggleBlockChat');
+      const slowModeToggle = document.getElementById('toggleSlowMode');
+      if (blockChatToggle) blockChatToggle.checked = !!val.chatBlocked;
+      if (slowModeToggle) slowModeToggle.checked = !!val.slowMode;
     });
     // Toggle handlers
-    document.getElementById('toggleBlockChat').onchange = function() {
-      controlRef.update({ chatBlocked: this.checked });
-      if (!this.checked) controlRef.update({ slowMode: false }); // unblock disables slow mode
-    };
-    document.getElementById('toggleSlowMode').onchange = function() {
-      controlRef.update({ slowMode: this.checked });
-    };
-    document.getElementById('toggleAnnounceMode').onchange = function() {
-      controlRef.update({ announceMode: this.checked });
-    };
+    const blockChatToggle = document.getElementById('toggleBlockChat');
+    const slowModeToggle = document.getElementById('toggleSlowMode');
+    if (blockChatToggle) {
+      blockChatToggle.onchange = function() {
+        controlRef.update({ chatBlocked: this.checked });
+        if (!this.checked) controlRef.update({ slowMode: false }); // unblock disables slow mode
+      };
+    }
+    if (slowModeToggle) {
+      slowModeToggle.onchange = function() {
+        controlRef.update({ slowMode: this.checked });
+      };
+    }
     loadUserList();
   }
 }
@@ -471,9 +473,11 @@ function hideAdminControls() {
 
 // Affiche la liste des utilisateurs et permet de changer leur rôle
 function loadUserList() {
+  const roleManager = document.getElementById('roleManager');
+  if (!roleManager) return; // Si le roleManager n'existe pas encore, on ne fait rien
+  
   usersRef.once('value', snap => {
     const users = snap.val() || {};
-    const roleManager = document.getElementById('roleManager');
     roleManager.innerHTML = '<b>Gestion des rôles :</b><br>';
     Object.entries(users).forEach(([uid, user]) => {
       roleManager.innerHTML += `
@@ -730,9 +734,9 @@ function addMessage(username, text, color) {
     delImg.alt = 'Supprimer';
     delImg.className = 'msg-delete-icon';
     deleteBtn.appendChild(delImg);
-    // place a small gap to the right of the delete icon (before the username)
-    deleteBtn.style.marginRight = '6px';
-    deleteBtn.style.display = (isAdmin || isModo) ? '' : 'none';
+    if (isAdmin || isModo) {
+      deleteBtn.classList.add('visible');
+    }
     if (msgKey) {
       deleteBtn.dataset.key = msgKey;
       deleteBtn.onclick = (ev) => {
@@ -750,11 +754,6 @@ function addMessage(username, text, color) {
     // Si annonce, applique un style spécial
     if (arguments[5] && arguments[5].announce) {
       msgDiv.classList.add('announce-message');
-      textSpan.style.fontWeight = 'bold';
-      textSpan.style.background = 'linear-gradient(90deg,#ffe082,#fffde7)';
-      textSpan.style.borderRadius = '6px';
-      textSpan.style.padding = '4px 10px';
-      textSpan.style.color = '#b8860b';
     }
     // place delete button to the left of the username
     msgDiv.appendChild(deleteBtn);
@@ -930,9 +929,9 @@ function populateEmojiPicker() {
     delImg.alt = 'Supprimer';
     delImg.className = 'msg-delete-icon';
     deleteBtn.appendChild(delImg);
-    // place a small gap to the right of the delete icon (before the username)
-    deleteBtn.style.marginRight = '6px';
-    deleteBtn.style.display = (isAdmin || isModo) ? '' : 'none';
+    if (isAdmin || isModo) {
+      deleteBtn.classList.add('visible');
+    }
     if (msgKey) {
       deleteBtn.dataset.key = msgKey;
       deleteBtn.onclick = (ev) => {
@@ -950,11 +949,6 @@ function populateEmojiPicker() {
     // Si annonce, applique un style spécial
     if (arguments[5] && arguments[5].announce) {
       msgDiv.classList.add('announce-message');
-      textSpan.style.fontWeight = 'bold';
-      textSpan.style.background = 'linear-gradient(90deg,#ffe082,#fffde7)';
-      textSpan.style.borderRadius = '6px';
-      textSpan.style.padding = '4px 10px';
-      textSpan.style.color = '#b8860b';
     }
     // place delete button to the left of the username
     msgDiv.appendChild(deleteBtn);

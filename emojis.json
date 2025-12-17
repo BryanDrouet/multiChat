@@ -4,5 +4,11 @@
   { "name": "laugh", "file": "laugh.svg" },
   { "name": "sad", "file": "sad.svg" },
   { "name": "angry", "file": "angry.svg" },
-  { "name": "love", "file": "love.svg" }
+  { "name": "love", "file": "love.svg" },
+  { "name": "cool", "file": "cool.svg" },
+  { "name": "party", "file": "party.svg" },
+  { "name": "think", "file": "think.svg" },
+  { "name": "cry", "file": "cry.svg" },
+  { "name": "star", "file": "star.svg" },
+  { "name": "fire", "file": "fire.svg" }
 ]
